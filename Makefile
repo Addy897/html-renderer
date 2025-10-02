@@ -2,7 +2,7 @@ CC = g++
 LIBS_DIR = lib/
 INCLUDE_DIR = includes/
 
-CLFAGS = -Wall -std=c++20 -I$(INCLUDE_DIR) -L$(LIBS_DIR)  
+CLFAGS = -Wall -std=c++20 -I$(INCLUDE_DIR) -L$(LIBS_DIR) -ggdb 
 
 LIBS= -lraylib -lopengl32 -lgdi32 -lwinmm
 
