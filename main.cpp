@@ -13,8 +13,7 @@ int main(int argc, char **argv) {
     std::stringstream ss;
     ss << in.rdbuf();
     std::string content = ss.str();
-    content = Parser::parse_html(content);
-    renderer = new Renderer(content, filename);
+    renderer = new Renderer(Parser::parse_html_to_dom(content), filename);
   }
   renderer->render();
   delete renderer;

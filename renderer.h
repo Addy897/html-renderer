@@ -20,19 +20,20 @@ private:
 
   std::string m_content;
   std::string m_title;
+  std::vector<Node> m_dom;
 
   Color m_background_color;
 
 private:
   void init();
   void wrap_content(float font_size, float spacing, float max_width);
-  void add_codepoint_range(Font *font, const char *fontPath, int start,
-                           int stop);
+  float draw_dom(Vector2 draw_rec, bool);
+  void load_all_codepoints(Font *font, const char *fontPath);
 
 public:
   Renderer();
-  Renderer(std::string content);
-  Renderer(std::string content, std::string &url);
+  Renderer(std::vector<Node>);
+  Renderer(std::vector<Node>, std::string &url);
 
   void render();
 };
