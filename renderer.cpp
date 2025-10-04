@@ -63,7 +63,6 @@ float Renderer::draw_dom(Vector2 draw_rec, bool draw) {
   float max_width = m_screen_width - 20.0f - 10.0f;
 
   float line_height = m_font_size * 1.5;
-  float font_size = m_font_size;
   Color color = BLACK;
   bool skip = false;
   bool is_underline = false;
@@ -133,14 +132,11 @@ void Renderer::render() {
   float padding_left = 10.0f;
   float padding_top = 10.0f;
   Rectangle panel_rec = {0, 0, (float)m_screen_width, (float)m_screen_height};
-  std::cout << "here\n";
   float height = draw_dom(Vector2{padding_left, padding_top}, false);
 
   Rectangle panelContentRec = {0, 0, panel_rec.width, height};
   Rectangle panelView = {0, 0, 0, 0};
   Vector2 panelScroll = {0, 0};
-  std::cout << height << "\n";
-  bool draw = true;
   while (!WindowShouldClose()) {
 
     BeginDrawing();
