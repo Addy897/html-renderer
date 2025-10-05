@@ -1,8 +1,6 @@
 #include "renderer.h"
 #include "includes/raylib.h"
 #include "parser.h"
-#include <iostream>
-#include <vector>
 #define RAYGUI_IMPLEMENTATION
 #include "includes/raygui.h"
 void Renderer::load_all_codepoints(Font *font, const char *fontPath) {
@@ -73,7 +71,12 @@ float Renderer::draw_dom(Vector2 draw_rec, bool draw) {
           node.m_data == "title") {
         skip = true;
       }
-      if (node.m_data == "p" || node.m_data == "div") {
+      if (node.m_data == "p") {
+        cursor.y += line_height + m_font_size;
+
+        cursor.x = draw_rec.x;
+      }
+      if (node.m_data == "div") {
         cursor.y += line_height;
         cursor.x = draw_rec.x;
       }
@@ -87,6 +90,10 @@ float Renderer::draw_dom(Vector2 draw_rec, bool draw) {
       if (node.m_data == "script" || node.m_data == "style" ||
           node.m_data == "title") {
         skip = false;
+      }
+      if (node.m_data == "p") {
+        cursor.y += m_font_size;
+        cursor.x = draw_rec.x;
       }
       if (node.m_data == "a") {
         color = BLACK;

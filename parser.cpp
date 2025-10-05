@@ -11,59 +11,35 @@ enum class State {
   COMMENT
 };
 
-string Parser::parse_html(string &content) {
-  string text;
-  bool in_tag = false;
-  bool in_entity = false;
-  bool is_tag_name = false;
-  string entity;
-  string tag_name;
-  for (char &c : content) {
-    if (c == '<') {
-      in_tag = true;
-      tag_name.clear();
-      is_tag_name = true;
-    } else if (c == '>') {
-      in_tag = false;
-    } else if (c == '&')
-      in_entity = true;
-    else if (c == ';' && in_entity) {
-      in_entity = false;
-      if (entity == "lt")
-        text.push_back('<');
-      else if (entity == "gt")
-        text.push_back('>');
-      else if (entity == "amp")
-        text.push_back('&');
-      entity.clear();
-    } else if (!in_tag && tag_name != "style") {
-      if (in_entity) {
-        if (isalnum(c)) {
-          entity.push_back(c);
-          continue;
-        } else {
-          in_entity = false;
-          text.append("&" + entity);
-          entity.clear();
-        }
-      }
-      text.push_back(c);
-    } else {
-      if (c == ' ')
-        is_tag_name = false;
-      if (is_tag_name)
-        tag_name.push_back(c);
-    }
+std::map<string, string> Parser::ent_map = {
+    {"quot", "\""},  {"apos", "'"},   {"amp", "&"},    {"lt", "<"},
+    {"gt", ">"},     {"nbsp", " "},   {"iexcl", "¡"},  {"cent", "¢"},
+    {"pound", "£"},  {"curren", "¤"}, {"yen", "¥"},    {"brvbar", "¦"},
+    {"sect", "§"},   {"uml", "¨"},    {"copy", "©"},   {"ordf", "ª"},
+    {"laquo", "«"},  {"not", "¬"},    {"shy", "­"},    {"reg", "®"},
+    {"macr", "¯"},   {"deg", "°"},    {"plusmn", "±"}, {"sup2", "²"},
+    {"sup3", "³"},   {"acute", "´"},  {"micro", "µ"},  {"para", "¶"},
+    {"middot", "·"}, {"cedil", "¸"},  {"sup1", "¹"},   {"ordm", "º"},
+    {"raquo", "»"},  {"frac14", "¼"}, {"frac12", "½"}, {"frac34", "¾"},
+    {"times", "×"},  {"divide", "÷"}, {"le", "≤"},     {"ge", "≥"},
+    {"ne", "≠"},     {"equiv", "≡"},  {"infin", "∞"},  {"radic", "√"},
+    {"hellip", "…"}, {"ndash", "–"},  {"#39", "\'"},
+};
+
+string Parser::get_ent(string ent_code) {
+  auto it = ent_map.find(ent_code);
+  if (it != ent_map.end()) {
+    return it->second;
   }
-  return text;
+  return "&" + ent_code + ";";
 }
-std::vector<Node> Parser::parse_html_to_dom(string &content) {
+std::vector<Node> Parser::parse_html(const string &content) {
 
   std::vector<Node> tokens;
   State state = State::DATA;
-  std::string buffer;
-  std::string currentToken;
-  std::string temp_ent;
+  string buffer;
+  string currentToken;
+  string temp_ent;
   size_t i = 0;
   while (i < content.size()) {
     char ch = content[i];
@@ -83,6 +59,7 @@ std::vector<Node> Parser::parse_html_to_dom(string &content) {
           state = State::TAG_OPEN;
         }
       } else if (ch == '&') {
+        temp_ent.clear();
         state = State::ENTITY;
       } else {
         buffer += ch;
@@ -98,17 +75,10 @@ std::vector<Node> Parser::parse_html_to_dom(string &content) {
       }
       break;
     case State::ENTITY:
-      if (isalnum(ch)) {
+      if (isalnum(ch) || ch == '#') {
         temp_ent.push_back(ch);
       } else if (ch == ';') {
-        if (temp_ent == "gt")
-          temp_ent = ">";
-        else if (temp_ent == "lt")
-          temp_ent = "<";
-        else if (temp_ent == "amp")
-          temp_ent = "&";
-        else
-          temp_ent = "&" + temp_ent + ";";
+        temp_ent = get_ent(temp_ent);
         buffer += temp_ent;
         state = State::DATA;
         temp_ent.clear();
@@ -128,6 +98,7 @@ std::vector<Node> Parser::parse_html_to_dom(string &content) {
         }
         temp_ent.clear();
       } else {
+        temp_ent.push_back(ch);
         buffer += "&" + temp_ent;
         state = State::DATA;
         temp_ent.clear();

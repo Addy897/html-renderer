@@ -7,6 +7,9 @@
 
 class Parser {
 public:
-  static std::string parse_html(std::string &buff);
-  static std::vector<Node> parse_html_to_dom(std::string &buff);
+  static std::map<std::string, std::string> ent_map;
+
+public:
+  static std::string get_ent(std::string);
+  static std::vector<Node> parse_html(const std::string &buff);
 };
