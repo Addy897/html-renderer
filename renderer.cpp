@@ -1,6 +1,8 @@
 #include "renderer.h"
 #include "includes/raylib.h"
 #include "parser.h"
+#include <sstream>
+#include <string>
 #define RAYGUI_IMPLEMENTATION
 #include "includes/raygui.h"
 void Renderer::load_all_codepoints(Font *font, const char *fontPath) {
@@ -56,15 +58,44 @@ void Renderer::init() {
   m_font = LoadFont(font_path);
   load_all_codepoints(&m_font, font_path);
 }
+void Renderer::draw_word(const std::string &line, Vector2 &cursor,
+                         Vector2 &draw_rec, const Properties &props) {
+  std::stringstream word_stream(line);
+  std::string word;
+  while (word_stream >> word) {
+    std::string temp = word + " ";
+    Vector2 temp_size = MeasureTextEx(props.font, temp.c_str(), props.font_size,
+                                      props.font_space);
+
+    if (cursor.x + temp_size.x > draw_rec.x + props.max_width) {
+      cursor.y += props.line_height;
+      cursor.x = draw_rec.x;
+    }
+
+    if (props.draw) {
+      DrawTextEx(props.font, temp.c_str(), cursor, props.font_size,
+                 props.font_space, props.color);
+      if (props.is_underline) {
+        DrawLineEx({cursor.x, cursor.y + temp_size.y},
+                   {cursor.x + temp_size.x, cursor.y + temp_size.y}, 1.0f,
+                   props.color);
+      }
+    }
+
+    cursor.x += temp_size.x;
+  }
+}
 float Renderer::draw_dom(Vector2 draw_rec, bool draw) {
   Vector2 cursor = draw_rec;
-  float max_width = m_screen_width - 20.0f - 10.0f;
-
-  float line_height = m_font_size * 1.5;
-  Color color = BLACK;
+  Properties props;
+  props.font = m_font;
+  props.max_width = m_screen_width - 20.0f - 10.0f;
+  props.line_height = props.font_size * 1.5;
+  props.draw = draw;
   bool skip = false;
-  bool is_underline = false;
+  bool allow_new_line = false;
   for (const Node &node : m_dom) {
+    props.line_height = props.font_size * 1.5f;
     switch ((int)node.m_type) {
     case TAGS::START_TAG: {
       if (node.m_data == "style" || node.m_data == "script" ||
@@ -72,17 +103,23 @@ float Renderer::draw_dom(Vector2 draw_rec, bool draw) {
         skip = true;
       }
       if (node.m_data == "p") {
-        cursor.y += line_height + m_font_size;
+        cursor.y += props.line_height + props.font_size;
 
         cursor.x = draw_rec.x;
       }
-      if (node.m_data == "div") {
-        cursor.y += line_height;
+      if (node.m_data == "h1") {
+        props.font_size = 28.0f;
+      }
+      if (node.m_data == "div" || node.m_data == "h1") {
+        cursor.y += props.line_height;
         cursor.x = draw_rec.x;
       }
       if (node.m_data == "a") {
-        color = BLUE;
-        is_underline = true;
+        props.color = BLUE;
+        props.is_underline = true;
+      }
+      if (node.m_data == "code") {
+        allow_new_line = true;
       }
       break;
     }
@@ -95,45 +132,38 @@ float Renderer::draw_dom(Vector2 draw_rec, bool draw) {
         cursor.y += m_font_size;
         cursor.x = draw_rec.x;
       }
-      if (node.m_data == "a") {
-        color = BLACK;
-        is_underline = false;
+      if (node.m_data == "h1") {
+        props.font_size = m_font_size;
       }
+      if (node.m_data == "a") {
+        props.color = BLACK;
+        props.is_underline = false;
+      }
+      allow_new_line = false;
       break;
     }
     case TAGS::TEXT_NODE: {
 
       if (skip)
         break;
-      std::stringstream wordStream(node.m_data);
-      std::string word;
-      while (wordStream >> word) {
-        std::string temp = word + " ";
-        Vector2 temp_size =
-            MeasureTextEx(m_font, temp.c_str(), m_font_size, m_font_spacing);
+      if (allow_new_line) {
 
-        if (cursor.x + temp_size.x > draw_rec.x + max_width) {
-          cursor.y += line_height;
+        std::stringstream ss(node.m_data);
+        std::string line;
+        while (std::getline(ss, line, '\n')) {
+          draw_word(line, cursor, draw_rec, props);
+          cursor.y += props.line_height;
           cursor.x = draw_rec.x;
         }
-
-        if (draw) {
-          DrawTextEx(m_font, temp.c_str(), cursor, m_font_size, m_font_spacing,
-                     color);
-          if (is_underline) {
-            DrawLineEx({cursor.x, cursor.y + temp_size.y},
-                       {cursor.x + temp_size.x, cursor.y + temp_size.y}, 1.0f,
-                       color);
-          }
-        }
-
-        cursor.x += temp_size.x;
+        break;
       }
+      draw_word(node.m_data, cursor, draw_rec, props);
+
       break;
     }
     }
   }
-  return (cursor.y + line_height) - draw_rec.y;
+  return (cursor.y + props.line_height) - draw_rec.y;
 }
 void Renderer::render() {
   float padding_left = 10.0f;
