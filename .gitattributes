@@ -1,3 +1,4 @@
 includes/raylib.h linguist-detectable=false
 includes/raymath.h linguist-detectable=false
 includes/raygui.h linguist-detectable=false
+test.html  linguist-detectable=false
