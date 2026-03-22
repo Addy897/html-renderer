@@ -3,8 +3,13 @@ LIBS_DIR = lib/
 INCLUDE_DIR = includes/
 
 CLFAGS = -Wall -std=c++20 -I$(INCLUDE_DIR) -L$(LIBS_DIR) -ggdb 
-
-LIBS= -lraylib -lopengl32 -lgdi32 -lwinmm
+ifeq ($(OS),Windows_NT)
+    LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm
+    EXEC_EXT = .exe
+else
+    LDFLAGS =  -lraylib -lX11
+    EXEC_EXT =
+endif
 
 EXECUTABLE = main
 
@@ -13,12 +18,12 @@ SRC = ${wildcard *.cpp}
 all: $(EXECUTABLE)
 
 run: $(EXECUTABLE)
-	./$(EXECUTABLE).exe
+	./$(EXECUTABLE)$(EXEC_EXT)
 
 
 
 $(EXECUTABLE): $(SRC)
-	$(CC) $^ $(CLFAGS) $(LIBS) -o $(EXECUTABLE).exe 
+	$(CC) $^ $(CLFAGS) $(LDFLAGS) -o $(EXECUTABLE)$(EXEC_EXT) 
 
 $@: $@.cpp
-	$(CC) $^ $(CLFAGS) -o $@.exe 
+	$(CC) $^ $(CLFAGS) -o $@$(EXEC_EXT) 
